@@ -1,97 +1,11 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "buildCommand": "chmod +x fix-parallax.sh && ./fix-parallax.sh && npm run build-skip-ts",
-        "outputDirectory": "dist"
-      }
-    }
-  ],
+  "framework": "vite",
+  "buildCommand": "node fix-parallax.js && npm run build-skip-ts",
+  "outputDirectory": "dist",
   "routes": [
     {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/assets/(.*)\\.js",
-      "headers": { 
-        "cache-control": "public, max-age=31536000, immutable",
-        "content-type": "application/javascript; charset=utf-8"
-      },
-      "continue": true
-    },
-    {
-      "src": "/assets/(.*)\\.css",
-      "headers": { 
-        "cache-control": "public, max-age=31536000, immutable",
-        "content-type": "text/css; charset=utf-8"
-      },
-      "continue": true
-    },
-    {
-      "src": "/(.*\\.(js|mjs))",
-      "headers": { 
-        "cache-control": "public, max-age=31536000, immutable",
-        "content-type": "application/javascript; charset=utf-8"
-      },
-      "continue": true
-    },
-    {
-      "src": "/(.*\\.(css))",
-      "headers": { 
-        "cache-control": "public, max-age=31536000, immutable",
-        "content-type": "text/css; charset=utf-8"
-      },
-      "continue": true
-    },
-    {
-      "src": "/(.*\\.(ico|png|jpg|jpeg|svg|webp))",
-      "headers": { "cache-control": "public, max-age=31536000, immutable" },
-      "continue": true
-    },
-    {
       "src": "/(.*)",
-      "dest": "/index.html",
-      "status": 200
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)\\.js",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript; charset=utf-8"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)\\.css",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "text/css; charset=utf-8"
-        }
-      ]
+      "dest": "/index.html"
     }
   ]
 } 

@@ -9,7 +9,7 @@
     "build-skip-ts": "vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "postinstall": "node -e \"const fs=require('fs');const path=require('path');const filePath=path.join(process.cwd(),'node_modules','react-parallax','@types','index.ts');if(fs.existsSync(filePath)){const content=fs.readFileSync(filePath,'utf8');const fixed=content.replace('import React, { ReactNode } from \\'react\\';','import React from \\'react\\';\\nimport type { ReactNode } from \\'react\\';');fs.writeFileSync(filePath,fixed)}\""
+    "postinstall": "node -e \"try{const fs=require('fs');const path=require('path');const filePath=path.join(process.cwd(),'node_modules','react-parallax','@types','index.ts');if(fs.existsSync(filePath)){const content=fs.readFileSync(filePath,'utf8');const fixed=content.replace('import React, { ReactNode } from \\'react\\';','import React from \\'react\\';\\nimport type { ReactNode } from \\'react\\';');fs.writeFileSync(filePath,fixed);console.log('Fixed ReactNode import in react-parallax')}}catch(e){console.error('Error fixing react-parallax:',e);}\""
   },
   "dependencies": {
     "axios": "^1.9.0",

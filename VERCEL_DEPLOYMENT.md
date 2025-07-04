@@ -28,52 +28,61 @@ git push
 
 ### 3. Configure Project Settings
 
-1. Keep the default framework preset (Vite)
-2. Set the Build Command to: `npm run build-skip-ts`
-3. Set the Output Directory to: `dist`
-4. Click "Deploy"
+When configuring your project in Vercel, use these settings:
 
-### 4. Environment Variables
+1. **Framework Preset**: Select "Vite"
+2. **Build Command**: `npm run build-skip-ts`
+3. **Output Directory**: `dist`
+4. **Install Command**: Keep the default (`npm install`)
+5. **Development Command**: Keep the default (`npm run dev`)
 
-You need to set up the following environment variables in your Vercel project settings:
+### 4. Environment Variables (CRITICAL)
+
+You **must** set up the following environment variable in your Vercel project settings:
 
 1. Go to your project in the Vercel dashboard
 2. Click on "Settings" > "Environment Variables"
 3. Add the following variable:
    - Name: `VITE_API_URL`
    - Value: Your production API URL (e.g., `https://your-backend-api.vercel.app/api`)
-4. Click "Save"
+4. Make sure to select "Production" for the environment
+5. Click "Save"
 
-### 5. Redeploy (if needed)
+### 5. Deploy
 
-If you've added environment variables after the initial deployment:
+After configuring your settings, click "Deploy". Vercel will:
+1. Clone your repository
+2. Install dependencies (which will run the postinstall script to fix the ReactNode issue)
+3. Build your application
+4. Deploy it to their global CDN
 
-1. Go to the "Deployments" tab
-2. Find your latest deployment
-3. Click the three dots menu (...)
-4. Select "Redeploy"
+### 6. Verify Deployment
+
+Once deployment is complete:
+1. Click on the generated URL to verify your application works
+2. Check that API requests are working correctly
+3. Test all main functionality
 
 ## Troubleshooting
+
+### Build Failures
+
+If your build fails with errors about the output directory:
+- Make sure you've set the correct output directory (`dist`)
+- Check that the build command (`npm run build-skip-ts`) works locally
 
 ### API Connection Issues
 
 If your frontend can't connect to your backend API:
+- Verify the `VITE_API_URL` environment variable is set correctly
+- Check that CORS is properly configured on your backend
+- Make sure your backend is deployed and accessible
 
-1. Make sure your API URL is correct in the environment variables
-2. Check that CORS is properly configured on your backend
-3. Verify that your backend is deployed and accessible
+### ReactNode Import Error
 
-### Build Failures
-
-If the build fails:
-
-1. Check the build logs in Vercel
-2. Make sure all dependencies are correctly installed
-3. Verify that the build script (`npm run build-skip-ts`) works locally
-
-## Updating Your Deployment
-
-Any new commits pushed to your main branch will automatically trigger a new deployment in Vercel.
+If you see errors related to ReactNode imports:
+- The postinstall script should automatically fix this issue
+- If it doesn't, you may need to manually update the file in the Vercel console
 
 ## Custom Domain
 
@@ -81,4 +90,8 @@ To set up a custom domain:
 
 1. Go to your project in the Vercel dashboard
 2. Click on "Settings" > "Domains"
-3. Add your domain and follow the instructions 
+3. Add your domain and follow the instructions
+
+## Updating Your Deployment
+
+Any new commits pushed to your main branch will automatically trigger a new deployment in Vercel. 
