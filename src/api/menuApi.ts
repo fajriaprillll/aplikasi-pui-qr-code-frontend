@@ -1,5 +1,6 @@
 import type { Menu } from '../types';
 import api from './axios';
+import { UploadAPI } from './uploadApi';
 
 export const MenuAPI = {
   // Get all menus
@@ -20,13 +21,52 @@ export const MenuAPI = {
       // Debug any image URLs in the response
       if (Array.isArray(response.data)) {
         response.data.forEach((item, index) => {
-          if (item.image) {
-            console.log(`Menu ${index} (${item.name}) has image: ${item.image}`);
+          if (item.imageUrl) {
+            console.log(`Menu ${index} (${item.name}) has image: ${item.imageUrl}`);
           }
           
           // Set default status to AVAILABLE if not provided
           if (!item.status) {
             item.status = 'AVAILABLE';
+          }
+          
+          // Add professional descriptions in Indonesian if not provided
+          if (!item.description) {
+            if (item.name.toLowerCase().includes('nasi goreng')) {
+              item.description = 'Nasi premium yang dimasak dengan teknik tradisional menggunakan bumbu rempah khas Indonesia. Disajikan dengan telur mata sapi, ayam suwir, dan kerupuk udang. Aroma khas kecap manis berpadu sempurna dengan sensasi pedas yang dapat disesuaikan.';
+            } else if (item.name.toLowerCase().includes('nasi')) {
+              item.description = 'Beras pilihan kualitas premium yang dimasak hingga pulen dan harum. Disajikan sebagai pendamping sempurna untuk berbagai hidangan utama kami.';
+            } else if (item.name.toLowerCase().includes('mie goreng') || item.name.toLowerCase().includes('mi goreng')) {
+              item.description = 'Mie berkualitas tinggi yang digoreng dengan teknik khusus bersama bumbu rahasia turun-temurun. Dilengkapi dengan potongan daging ayam, bakso, dan sayuran segar, serta telur orak-arik yang menambah cita rasa.';
+            } else if (item.name.toLowerCase().includes('ayam bakar')) {
+              item.description = 'Potongan ayam pilihan yang dimarinasi dengan bumbu tradisional selama minimal 6 jam, kemudian dipanggang di atas bara api hingga sempurna. Disajikan dengan sambal khas rumah yang memberikan sensasi pedas yang khas.';
+            } else if (item.name.toLowerCase().includes('ayam goreng')) {
+              item.description = 'Potongan ayam segar yang dimarinasi dengan rempah-rempah pilihan, digoreng dengan teknik khusus hingga renyah di luar namun tetap juicy di dalam. Disajikan dengan lalapan segar dan sambal pedas.';
+            } else if (item.name.toLowerCase().includes('ayam')) {
+              item.description = 'Daging ayam berkualitas premium yang diolah dengan resep eksklusif dan bumbu pilihan. Dimasak hingga sempurna untuk menghadirkan cita rasa autentik yang menggugah selera.';
+            } else if (item.name.toLowerCase().includes('sate')) {
+              item.description = 'Potongan daging pilihan yang ditusuk dan dipanggang di atas bara api hingga kecoklatan sempurna. Disajikan dengan bumbu kacang khas yang kaya rasa dan lontong pilihan. Cita rasa manis dan gurih yang menjadi favorit.';
+            } else if (item.name.toLowerCase().includes('es teh')) {
+              item.description = 'Seduhan teh premium yang disajikan dingin dengan es batu kristal. Manisnya disesuaikan dan dapat dikustomisasi sesuai selera Anda. Kesegaran yang sempurna untuk menemani hidangan.';
+            } else if (item.name.toLowerCase().includes('teh') || item.name.toLowerCase().includes('tea')) {
+              item.description = 'Racikan teh berkualitas tinggi dengan aroma yang khas dan menenangkan. Disajikan panas atau dingin sesuai selera, memberikan kesegaran optimal di setiap tegukan.';
+            } else if (item.name.toLowerCase().includes('jus') || item.name.toLowerCase().includes('juice')) {
+              item.description = 'Perpaduan buah-buahan segar pilihan yang diproses dengan teknik khusus untuk mempertahankan nutrisi dan cita rasanya. Tanpa tambahan pengawet, disajikan dingin untuk kesegaran maksimal.';
+            } else if (item.name.toLowerCase().includes('kopi') || item.name.toLowerCase().includes('coffee')) {
+              item.description = 'Kopi premium dari biji pilihan yang digiling segar sebelum diseduh. Metode brewing kami menghasilkan kopi dengan aroma kuat dan cita rasa yang kaya namun seimbang.';
+            } else if (item.name.toLowerCase().includes('roti') || item.name.toLowerCase().includes('bread')) {
+              item.description = 'Roti yang dipanggang fresh setiap hari dengan bahan berkualitas tinggi. Tekstur lembut di dalam dan renyah di luar, dengan filling yang melimpah dan lezat.';
+            } else if (item.name.toLowerCase().includes('es teler')) {
+              item.description = 'Minuman premium khas Indonesia yang dibuat dari paduan sempurna buah alpukat berkualitas, potongan kelapa muda segar, nangka matang pilihan, dan cincau hitam. Disiram dengan kuah santan premium yang diperkaya sirup manis aromatis. Disajikan dengan es serut halus untuk menyempurnakan kelezatan setiap tegukan.';
+            } else if (item.name.toLowerCase().includes('es jeruk')) {
+              item.description = 'Minuman signature berbahan dasar jeruk segar premium yang diperas langsung saat dipesan. Tingkat kemanisan diracik sempurna oleh mixologist kami, disajikan dengan es kristal dan garnish irisan jeruk nipis segar. Kesegaran alami yang menyehatkan tubuh dan menyegarkan pikiran.';
+            } else if (item.name.toLowerCase().includes('es')) {
+              item.description = 'Minuman dingin menyegarkan dengan bahan-bahan berkualitas premium. Disajikan dengan es batu kristal untuk kesegaran maksimal yang cocok dinikmati kapan saja.';
+            } else if (item.name.toLowerCase().includes('roti bakar')) {
+              item.description = 'Roti artisan premium yang dipanggang dengan teknik khusus hingga mencapai kematangan sempurna. Lapisan luar dibakar hingga keemasan renyah, sementara bagian dalam tetap lembut dan beraroma harum. Disajikan dengan pilihan topping signature seperti cokelat Belgian premium, keju mozzarella berkualitas, atau selai buah homemade tanpa pengawet.';
+            } else {
+              item.description = 'Hidangan spesial yang disiapkan oleh chef berpengalaman kami menggunakan bahan-bahan premium berkualitas tinggi. Diproses dengan teknik memasak modern namun tetap mempertahankan cita rasa autentik.';
+            }
           }
           
           // For demo purposes: Add some customization options to specific food types
@@ -91,210 +131,277 @@ export const MenuAPI = {
     }
   },
 
-  // Create a new menu
+  // Create a new menu with image upload support
   create: async (menu: Omit<Menu, 'id'> | FormData): Promise<Menu> => {
     try {
-      console.log('Creating menu with data:', menu);
+      // Get the token for authorization
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('Authentication token not found. Please log in again.');
+      }
+
+      // Extract data from FormData or use the menu object directly
+      let menuData: any = {};
+      let imageFile: File | null = null;
       
-      // Handle FormData or regular object
       if (menu instanceof FormData) {
-        // Set default status if not specified
-        if (!menu.get('status')) {
-          menu.append('status', 'AVAILABLE');
-        }
+        // Extract all form fields
+        const name = menu.get('name');
+        const price = menu.get('price');
+        const category = menu.get('category') || '';
+        const description = menu.get('description') || '';
+        const status = menu.get('status') || 'AVAILABLE';
         
-        console.log('Sending as FormData');
+        // Check for image file
+        imageFile = menu.get('image') as File || null;
         
-        // Check if there's a file in the FormData
-        const imageFile = menu.get('image');
-        if (imageFile instanceof File) {
-          console.log('FormData contains file:', imageFile.name, imageFile.type, imageFile.size);
-          
-          // Add a debugging copy of the image filename to help trace what happens to it
-          menu.append('originalFilename', imageFile.name);
+        // Create menu data object
+        menuData = {
+          name,
+          price: Number(price),
+          category,
+          description,
+          status,
+          isAvailable: status === 'AVAILABLE'
+        };
+        
+        console.log('Creating menu from FormData:', {
+          name, price, category, description,
+          hasImageFile: !!imageFile
+        });
         } else {
-          console.log('FormData does not contain a file or it is not a File object:', imageFile);
-        }
-        
-        // Try multiple approaches to find one that works with the backend
-        let errorMessages = [];
-        
-        // Approach 1: Standard FormData without any special headers
+        // Use menu object directly
+        menuData = {
+          name: menu.name,
+          price: typeof menu.price === 'string' ? Number(menu.price) : menu.price,
+          category: menu.category || '',
+          description: menu.description || '',
+          status: menu.status || 'AVAILABLE',
+          isAvailable: menu.status !== 'OUT_OF_STOCK'
+        };
+      }
+      
+      // Handle image upload if present
+      if (imageFile) {
         try {
-          console.log('Approach 1: Sending FormData with default browser-set headers');
-          const response = await api.post('/menu', menu);
-          console.log('Menu created successfully with approach 1:', response.data);
+          console.log('Uploading image file before creating menu');
+          const uploadResult = await UploadAPI.uploadImage(imageFile);
           
-          // Log image URL in response if it exists
-          if (response.data && response.data.image) {
-            console.log('Response includes image URL:', response.data.image);
-          }
-          
-          return response.data;
-        } catch (error1: any) {
-          console.error('Approach 1 failed:', error1.message);
-          errorMessages.push(`Approach 1: ${error1.message}`);
-          
-          // Approach 2: Try with explicit multipart/form-data content type
-          try {
-            console.log('Approach 2: Sending with explicit multipart/form-data header');
-            const customConfig = {
+          // Set the image URL from upload response
+          menuData.imageUrl = uploadResult.url;
+          console.log('Image uploaded, URL:', uploadResult.url);
+        } catch (uploadError: any) {
+          console.error('Image upload failed:', uploadError);
+          throw new Error(`Image upload failed: ${uploadError.message}`);
+        }
+      }
+      
+      console.log('Sending create menu request with payload:', menuData);
+      
+      // Make the API call to create menu
+      const response = await api.post('/menu', menuData, {
               headers: {
-                'Content-Type': 'multipart/form-data'
-              }
-            };
-            
-            const response = await api.post('/menu', menu, customConfig);
-            console.log('Menu created successfully with approach 2:', response.data);
-            return response.data;
-          } catch (error2: any) {
-            console.error('Approach 2 failed:', error2.message);
-            errorMessages.push(`Approach 2: ${error2.message}`);
-            
-            // Approach 3: Try with specific URL for file uploads if the backend has a different endpoint
-            try {
-              console.log('Approach 3: Trying alternative endpoint for uploads');
-              const response = await api.post('/upload/menu', menu);
-              console.log('Menu created successfully with approach 3:', response.data);
-              return response.data;
-            } catch (error3: any) {
-              console.error('Approach 3 failed:', error3.message);
-              errorMessages.push(`Approach 3: ${error3.message}`);
-              
-              throw new Error(`All upload approaches failed: ${errorMessages.join(', ')}`);
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
             }
-          }
-        }
-      } else {
-        // Set default status if not specified
-        if (!menu.status) {
-          menu = { ...menu, status: 'AVAILABLE' };
-        }
-        
-        console.log('Sending as JSON object:', menu);
-        
-        // For regular JSON objects
-        const response = await api.post('/menu', menu);
+      });
+      
         console.log('Menu created successfully:', response.data);
         return response.data;
-      }
     } catch (error: any) {
       console.error('Error creating menu:', error);
       
+      // Format a user-friendly error message
+      let errorMessage = 'Failed to create menu';
+      
       if (error.response) {
-        console.error('Server response error:', error.response.status, error.response.data);
-        const errorMessage = 
-          (typeof error.response.data === 'object' && error.response.data.message) 
-            ? error.response.data.message 
-            : 'Failed to create menu - server error';
-        throw new Error(errorMessage);
-      } else if (error.request) {
-        console.error('No response received from server');
-        throw new Error('Network error - please check your connection');
-      } else {
-        throw new Error(error.message || 'Failed to create menu');
+        const status = error.response.status;
+        const responseData = error.response.data;
+        
+        console.error(`Server returned ${status}:`, responseData);
+        
+        if (typeof responseData === 'object' && responseData.message) {
+          errorMessage = `${errorMessage}: ${responseData.message}`;
+        } else if (typeof responseData === 'object' && responseData.error) {
+          errorMessage = `${errorMessage}: ${responseData.error}`;
+        } else if (status === 401) {
+          errorMessage = 'Authentication failed. Please log in again.';
+        } else if (status === 400) {
+          errorMessage = 'Invalid menu data. Please check all required fields.';
+        } else if (status === 500) {
+          errorMessage = 'Server error. Please try again later.';
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
       }
+      
+      throw new Error(errorMessage);
     }
   },
 
-  // Update a menu
+  // Update a menu with image upload support
   update: async (id: number, menu: Partial<Menu> | FormData): Promise<Menu> => {
     try {
       console.log(`Updating menu ${id} with data:`, menu);
       
-      // Choose the right approach based on data type
-      if (menu instanceof FormData) {
-        // Check if there's an image file
-        const imageFile = menu.get('image');
-        if (imageFile instanceof File) {
-          console.log('FormData contains file for update:', imageFile.name, imageFile.type, imageFile.size);
-          
-          // Add a debugging copy of the image filename
-          menu.append('originalFilename', imageFile.name);
-        }
-        
-        // Multiple approaches for update with FormData
-        let errorMessages = [];
-        
-        // Approach 1: Standard method without headers
-        try {
-          console.log('Approach 1: Updating with FormData (no custom headers)');
-          const response = await api.put(`/menu/${id}`, menu);
-          console.log('Menu updated successfully with approach 1:', response.data);
-          return response.data;
-        } catch (error1: any) {
-          console.error('Approach 1 failed for update:', error1.message);
-          errorMessages.push(`Approach 1: ${error1.message}`);
-          
-          // Approach 2: With explicit headers
-          try {
-            console.log('Approach 2: Updating with multipart/form-data header');
-            const customConfig = {
-              headers: {
-                'Content-Type': 'multipart/form-data'
-              }
-            };
-            
-            const response = await api.put(`/menu/${id}`, menu, customConfig);
-            console.log('Menu updated successfully with approach 2:', response.data);
-            return response.data;
-          } catch (error2: any) {
-            console.error('Approach 2 failed for update:', error2.message);
-            errorMessages.push(`Approach 2: ${error2.message}`);
-            
-            // Approach 3: Try with POST and method override for APIs that don't support PUT with FormData
-            try {
-              console.log('Approach 3: Using POST with method override for PUT');
-              menu.append('_method', 'PUT'); // Some backends use this convention
-              const response = await api.post(`/menu/${id}`, menu);
-              console.log('Menu updated successfully with approach 3:', response.data);
-              return response.data;
-            } catch (error3: any) {
-              console.error('All update approaches failed:', error3.message);
-              errorMessages.push(`Approach 3: ${error3.message}`);
-              
-              throw new Error(`All update approaches failed: ${errorMessages.join(', ')}`);
-            }
-          }
-        }
-      } else {
-        // For regular JSON updates
-        
-        // Handle status updates
-        if ('status' in menu) {
-          console.log(`Menu ${id} status updating to: ${menu.status}`);
-          // Validate status properly
-          if (menu.status !== 'AVAILABLE' && menu.status !== 'OUT_OF_STOCK') {
-            console.warn(`Invalid status value: ${menu.status}, defaulting to AVAILABLE`);
-            menu.status = 'AVAILABLE'; // Default to available
-          }
-        }
-        
-        const response = await api.put(`/menu/${id}`, menu);
-        console.log('Menu updated successfully (JSON):', response.data);
-        return response.data;
+      // Get the token for authorization
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('Authentication token not found. Please log in again.');
       }
+      
+      // Extract data from FormData or use the menu object directly
+      let menuData: any = {};
+      let imageFile: File | null = null;
+      
+      if (menu instanceof FormData) {
+        // Extract all form fields
+        for (const [key, value] of menu.entries()) {
+          if (key === 'image') {
+            imageFile = value as File;
+          } else if (key === 'price') {
+            menuData[key] = Number(value);
+          } else if (key !== 'imageUrl') { // Skip 'imageUrl' if we have imageFile
+            menuData[key] = value;
+              }
+        }
+        
+        // Set isAvailable based on status
+        const status = menuData.status || 'AVAILABLE';
+        menuData.isAvailable = status === 'AVAILABLE';
+        
+        console.log('Updating menu from FormData:', {
+          ...menuData,
+          hasImageFile: !!imageFile
+        });
+      } else {
+        // Use menu object directly
+        menuData = { ...menu };
+        
+        // Convert price to number if it's a string
+        if (menuData.price !== undefined && typeof menuData.price === 'string') {
+          menuData.price = Number(menuData.price);
+        }
+        
+        // Set isAvailable based on status
+        if (menuData.status) {
+          menuData.isAvailable = menuData.status === 'AVAILABLE';
+        }
+      }
+      
+      // Handle image upload if present
+      if (imageFile) {
+        try {
+          console.log('Uploading new image file before updating menu');
+          const uploadResult = await UploadAPI.uploadImage(imageFile);
+          
+          // Set the image URL from upload response
+          menuData.imageUrl = uploadResult.url;
+          console.log('Image uploaded, URL:', uploadResult.url);
+        } catch (uploadError: any) {
+          console.error('Image upload failed:', uploadError);
+          throw new Error(`Image upload failed: ${uploadError.message}`);
+        }
+      }
+      
+      console.log('Sending update menu request with payload:', menuData);
+      
+      // Make the API call to update menu
+      const response = await api.put(`/menu/${id}`, menuData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      console.log('Menu updated successfully:', response.data);
+        return response.data;
     } catch (error: any) {
       console.error(`Error updating menu ${id}:`, error);
       
+      // Format a user-friendly error message
+      let errorMessage = 'Failed to update menu';
+      
       if (error.response) {
-        const errorMessage = 
-          (typeof error.response.data === 'object' && error.response.data.message) 
-            ? error.response.data.message 
-            : 'Failed to update menu - server error';
-        throw new Error(errorMessage);
-      } else {
-        throw new Error('Failed to update menu - please try again');
+        const status = error.response.status;
+        const responseData = error.response.data;
+        
+        console.error(`Server returned ${status}:`, responseData);
+        
+        if (typeof responseData === 'object' && responseData.message) {
+          errorMessage = `${errorMessage}: ${responseData.message}`;
+        } else if (typeof responseData === 'object' && responseData.error) {
+          errorMessage = `${errorMessage}: ${responseData.error}`;
+        } else if (status === 401) {
+          errorMessage = 'Authentication failed. Please log in again.';
+        } else if (status === 400) {
+          errorMessage = 'Invalid menu data. Please check all required fields.';
+        } else if (status === 404) {
+          errorMessage = 'Menu not found. It may have been deleted.';
+        } else if (status === 500) {
+          errorMessage = 'Server error. Please try again later.';
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
       }
+      
+      throw new Error(errorMessage);
     }
   },
 
-  // Delete a menu
+  // Delete a menu - simplified approach with special case handling
   delete: async (id: number): Promise<void> => {
+    console.log(`Starting delete operation for menu ID: ${id}`);
+    
+    // Get token
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.error('No auth token found');
+      throw new Error('Authentication required. Please log in again.');
+    }
+    
+    // Get base URL from environment or default
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    const url = `${baseUrl}/menu/${id}`;
+    
+    console.log(`Sending DELETE request to: ${url}`);
+    
     try {
-      await api.delete(`/menu/${id}`);
+      // Use native fetch for simplicity
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      // Check response status
+      if (response.ok) {
+        console.log('Delete successful');
+        return;
+      }
+      
+      // Handle common error cases
+      if (response.status === 404) {
+        console.log('Item already deleted or not found, considering operation successful');
+        return; // Consider this a success since the item doesn't exist anymore
+      }
+      
+      if (response.status === 401) {
+        throw new Error('Authentication failed. Please log in again.');
+      }
+      
+      // For other errors, try to get the response text
+      try {
+        const errorText = await response.text();
+        console.error(`Delete failed with status: ${response.status}, response: ${errorText}`);
+        throw new Error(`Server error (${response.status}). Please try again.`);
+      } catch (textError) {
+        // If we can't get the response text, use a generic error
+        throw new Error(`Server error (${response.status}). Please try again.`);
+      }
     } catch (error) {
-      console.error(`Error deleting menu ${id}:`, error);
+      console.error('Error in delete operation:', error);
       throw error;
     }
   },

@@ -5,19 +5,25 @@ import { FaTimes } from 'react-icons/fa';
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title: string;
+  title?: string;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   showCloseButton?: boolean;
+  className?: string;
+  contentClassName?: string;
+  icon?: React.ReactNode;
 }
 
 const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
-  title,
+  title = '',
   children,
   size = 'md',
   showCloseButton = true,
+  className = '',
+  contentClassName = '',
+  icon,
 }) => {
   // Reference to modal content for focus management
   const modalRef = useRef<HTMLDivElement>(null);
@@ -32,28 +38,22 @@ const Modal: React.FC<ModalProps> = ({
 
     document.addEventListener('keydown', handleEscape);
     
-    // Prevent body scrolling when modal is open
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      
-      // Focus trap - focus the modal when it opens
-      if (modalRef.current) {
-        modalRef.current.focus();
-      }
+    // Focus trap - focus the modal when it opens
+    if (isOpen && modalRef.current) {
+      modalRef.current.focus();
     }
     
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'auto';
     };
   }, [isOpen, onClose]);
 
   // Modal sizes
   const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
+    sm: 'max-w-md w-full',
+    md: 'max-w-lg w-full',
+    lg: 'max-w-2xl w-full',
+    xl: 'max-w-4xl w-full',
     full: 'max-w-[95vw] w-full',
   };
 
@@ -69,43 +69,55 @@ const Modal: React.FC<ModalProps> = ({
     visible: { 
       opacity: 1,
       transition: {
-        duration: 0.2,
-        ease: 'easeOut'
+        duration: 0.3,
+        ease: 'easeOut' as const
       }
     },
     exit: {
       opacity: 0,
       transition: {
-        duration: 0.15,
-        ease: 'easeIn'
+        duration: 0.2,
+        ease: 'easeIn' as const
       }
     }
   };
 
   const modalVariants = {
     hidden: { 
-      scale: 0.95, 
+      scale: 0.8,
       opacity: 0,
-      y: 10
+      y: 20,
     },
     visible: { 
       scale: 1, 
       opacity: 1,
       y: 0,
       transition: {
-        type: "spring",
-        damping: 30,
-        stiffness: 400,
-        duration: 0.25
+        type: "spring" as const,
+        damping: 25,
+        stiffness: 300,
+        duration: 0.4
       }
     },
     exit: {
-      scale: 0.98,
+      scale: 0.9,
       opacity: 0,
       y: 10,
       transition: {
         duration: 0.2,
-        ease: 'easeIn'
+        ease: 'easeIn' as const
+      }
+    }
+  };
+
+  const contentVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        delay: 0.2,
+        duration: 0.3
       }
     }
   };
@@ -114,7 +126,7 @@ const Modal: React.FC<ModalProps> = ({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4 overflow-hidden"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={handleBackdropClick}
           variants={backdropVariants}
           initial="hidden"
@@ -125,7 +137,8 @@ const Modal: React.FC<ModalProps> = ({
           aria-labelledby="modal-title"
         >
           <motion.div 
-            className={`bg-white dark:bg-gray-800 rounded-xl shadow-xl dark:shadow-black/30 w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700 will-change-transform`}
+            className={`relative flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 ${sizeClasses[size] || ''} ${className}`}
+            style={{ zIndex: 60 }}
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -134,38 +147,56 @@ const Modal: React.FC<ModalProps> = ({
             ref={modalRef}
             tabIndex={-1}
           >
-            <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-              <motion.h2 
-                className="text-xl font-semibold text-gray-800 dark:text-gray-100"
-                id="modal-title"
-                initial={{ x: -10, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.1, duration: 0.3 }}
-              >
-                {title}
-              </motion.h2>
-              
-              {showCloseButton && (
-                <motion.button
-                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full p-2 transition-colors"
-                  onClick={onClose}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  initial={{ rotate: 45, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  aria-label="Close modal"
+            {/* Header modal */}
+            {title && (
+              <div className="flex justify-between items-center p-5 border-b border-gray-200 dark:border-gray-700">
+                <motion.div 
+                  className="flex items-center"
+                  initial={{ x: -10, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.3 }}
                 >
-                  <FaTimes className="h-4 w-4" />
-                </motion.button>
-              )}
-            </div>
+                  {icon ? (
+                    <motion.div 
+                      className="bg-primary-50 dark:bg-primary-900/30 text-primary-500 dark:text-primary-400 p-2.5 rounded-lg mr-3 shadow-sm"
+                      initial={{ rotate: -10, scale: 0.8 }}
+                      animate={{ rotate: 0, scale: 1 }}
+                      transition={{ type: "spring", stiffness: 200 }}
+                    >
+                      {icon}
+                    </motion.div>
+                  ) : null}
+                  <h2 
+                    className="text-xl font-bold text-gray-800 dark:text-gray-100"
+                    id="modal-title"
+                  >
+                    {title}
+                  </h2>
+                </motion.div>
+                
+                {showCloseButton && (
+                  <motion.button
+                    className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full p-2.5 transition-colors shadow-sm"
+                    onClick={onClose}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    initial={{ rotate: 45, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    aria-label="Close modal"
+                  >
+                    <FaTimes className="h-4 w-4" />
+                  </motion.button>
+                )}
+              </div>
+            )}
             
+            {/* Content without overflow restriction */}
             <motion.div 
-              className="p-5 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, duration: 0.3 }}
+              className={`p-6 ${contentClassName}`}
+              variants={contentVariants}
+              initial="hidden"
+              animate="visible"
             >
               {children}
             </motion.div>

@@ -103,10 +103,10 @@ const RegisterPage: React.FC = () => {
 
   return (
     <Layout noHeaderFooter>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-white flex items-center justify-center px-4 relative overflow-hidden">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center px-4 relative overflow-hidden text-gray-900 dark:text-gray-100 transition-colors duration-300">
         {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-200 rounded-full -mt-32 -mr-32 opacity-20"></div>
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-200 rounded-full -mb-32 -ml-32 opacity-20"></div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-200 rounded-full -mt-32 -mr-32 opacity-20 dark:hidden"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-200 rounded-full -mb-32 -ml-32 opacity-20 dark:hidden"></div>
         
         {/* Animated dots */}
         {[...Array(6)].map((_, index) => (

@@ -1,4 +1,5 @@
-export { MenuAPI } from './menuApi';
-export { OrderAPI } from './orderApi';
-export { TableAPI } from './tableApi';
+export * from './menuApi';
+export * from './orderApi';
+export * from './tableApi';
+export * from './uploadApi';
 export { default as api } from './axios'; 

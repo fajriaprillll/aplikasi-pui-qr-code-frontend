@@ -24,10 +24,16 @@ interface AuthStore {
   user: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  users: User[];
+  isLoadingUsers: boolean;
+  usersError: string | null;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   checkAuth: () => Promise<boolean>;
   registerUser: (userData: RegisterUserData) => Promise<boolean>;
+  getUsers: () => Promise<User[]>;
+  updateUser: (userId: number, userData: UpdateUserData) => Promise<boolean>;
+  deleteUser: (userId: number) => Promise<boolean>;
 }
 
 interface RegisterUserData {
@@ -37,8 +43,15 @@ interface RegisterUserData {
   role?: 'ADMIN' | 'STAFF';
 }
 
+interface UpdateUserData {
+  username?: string;
+  name?: string;
+  role?: 'ADMIN' | 'STAFF';
+  password?: string;
+}
+
 // Get initial state from localStorage
-const getInitialState = (): { user: User | null; isAuthenticated: boolean; isAdmin: boolean } => {
+const getInitialState = (): { user: User | null; isAuthenticated: boolean; isAdmin: boolean; users: User[]; isLoadingUsers: boolean; usersError: string | null; } => {
   try {
     console.log('AuthStore - Getting initial state');
     
@@ -50,6 +63,9 @@ const getInitialState = (): { user: User | null; isAuthenticated: boolean; isAdm
         user: null,
         isAuthenticated: false,
         isAdmin: false,
+        users: [],
+        isLoadingUsers: false,
+        usersError: null
       };
     }
     
@@ -64,6 +80,9 @@ const getInitialState = (): { user: User | null; isAuthenticated: boolean; isAdm
         user,
         isAuthenticated: true,
         isAdmin: user.role === 'ADMIN',
+        users: [],
+        isLoadingUsers: false,
+        usersError: null
       };
     }
   } catch (error) {
@@ -77,6 +96,9 @@ const getInitialState = (): { user: User | null; isAuthenticated: boolean; isAdm
     user: null,
     isAuthenticated: false,
     isAdmin: false,
+    users: [],
+    isLoadingUsers: false,
+    usersError: null
   };
 };
 
@@ -140,6 +162,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     console.log('AuthStore - Clearing localStorage');
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
+    
+    // Redirect to login page
+    console.log('AuthStore - Redirecting to login page');
+    window.location.href = '/admin/login';
   },
   
   checkAuth: async () => {
@@ -183,6 +209,105 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
   },
   
+  getUsers: async () => {
+    try {
+      set({ isLoadingUsers: true, usersError: null });
+      
+      const response = await api.get('/auth/users');
+      
+      if (response.status === 200 && Array.isArray(response.data)) {
+        console.log('AuthStore - Retrieved users:', response.data.length);
+        set({ users: response.data, isLoadingUsers: false });
+        return response.data;
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error: any) {
+      console.error('AuthStore - Failed to get users:', error);
+      set({ usersError: 'Failed to load users', isLoadingUsers: false });
+      return [];
+    }
+  },
+  
+  updateUser: async (userId: number, userData: UpdateUserData) => {
+    try {
+      console.log(`AuthStore - Updating user ${userId}:`, userData);
+      
+      const response = await api.put(`/auth/users/${userId}`, userData);
+      
+      if (response.status === 200) {
+        console.log('AuthStore - User update successful');
+        
+        // Refresh users list after update
+        await get().getUsers();
+        
+        // If the updated user is the current user, update local state
+        const currentUser = get().user;
+        if (currentUser && currentUser.id === userId) {
+          const updatedUser = { ...currentUser, ...userData };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          
+          set({
+            user: updatedUser,
+            isAdmin: updatedUser.role === 'ADMIN'
+          });
+        }
+        
+        return true;
+      } else {
+        console.error('AuthStore - User update failed with status:', response.status);
+        return false;
+      }
+    } catch (error: any) {
+      console.error('AuthStore - User update error:', error);
+      
+      // Handle specific error responses
+      if (error.response) {
+        console.error(`AuthStore - Server error: ${error.response.status}`, 
+          error.response.data?.error || 'Unknown error');
+      }
+      
+      return false;
+    }
+  },
+  
+  deleteUser: async (userId: number) => {
+    try {
+      console.log(`AuthStore - Deleting user ${userId}`);
+      
+      const response = await api.delete(`/auth/users/${userId}`);
+      
+      if (response.status === 200) {
+        console.log('AuthStore - User deletion successful');
+        
+        // Update the users list by filtering out the deleted user
+        const currentUsers = get().users;
+        set({ users: currentUsers.filter(user => user.id !== userId) });
+        
+        // If the deleted user is the current user, log out
+        const currentUser = get().user;
+        if (currentUser && currentUser.id === userId) {
+          get().logout();
+        }
+        
+        return true;
+      } else {
+        console.error('AuthStore - User deletion failed with status:', response.status);
+        return false;
+      }
+    } catch (error: any) {
+      console.error('AuthStore - User deletion error:', error);
+      
+      // Handle specific error responses
+      if (error.response) {
+        console.error(`AuthStore - Server error: ${error.response.status}`, 
+          error.response.data?.error || 'Unknown error');
+      }
+      
+      return false;
+    }
+  },
+  
   registerUser: async (userData: RegisterUserData) => {
     try {
       // Remove the isAdmin check that was blocking the API call
@@ -206,6 +331,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       
       if (response.status === 201 || response.status === 200) {
         console.log('AuthStore - Registration successful for:', userData.username);
+        
+        // Refresh the users list after registration
+        await get().getUsers();
+        
         return true;
       } else {
         console.error('AuthStore - Registration failed with status:', response.status);

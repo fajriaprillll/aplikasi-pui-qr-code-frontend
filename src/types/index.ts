@@ -16,9 +16,10 @@ export interface Menu {
   name: string;
   description: string;
   price: number;
-  image: string;
+  imageUrl: string;
   category?: string;
   status?: 'AVAILABLE' | 'OUT_OF_STOCK';
+  isAvailable?: boolean;
   customizationOptions?: MenuCustomizationOption[];
 }
 
@@ -53,6 +54,13 @@ export enum OrderStatus {
   CANCELLED = 'CANCELLED'
 }
 
+// Helper function to check if an order can be cancelled by a customer
+export const canCustomerCancelOrder = (status: OrderStatus): boolean => {
+  // Only PENDING orders can be cancelled by customers
+  // Once an order is being processed, completed, or already cancelled, it cannot be cancelled
+  return status === OrderStatus.PENDING;
+};
+
 // Note: The backend supports PENDING, COMPLETED, and CANCELLED statuses
 // isProcessed flag indicates if the kitchen has started preparing the order
 
@@ -73,6 +81,9 @@ export enum TableStatus {
 
 // Cart Types
 export interface CartItem extends OrderItem {
+  name: string;
+  imageUrl: string;
+  notes?: string;
   customizations?: Record<string, string[]>;
   extraPrice?: number;
 }

@@ -1,9 +1,10 @@
 import type { Order, OrderHistory, DailyOrderCounter, CreateOrder, OrderItem } from '../types/order';
 import type { Table, Menu } from '../types';
-import { OrderStatus } from '../types/order';
+import { OrderStatus } from '../types';
 import type { AxiosResponse } from 'axios';
 import axios from 'axios';
 import api from './axios';
+import { createStartOfDay, createEndOfDay, isDateInRange } from '../utils/format';
 
 // Create a specialized function to handle order status updates with retries
 const updateOrderStatusWithRetry = async (id: number, status: any): Promise<Order> => {
@@ -225,17 +226,34 @@ export const OrderAPI = {
     searchField?: 'all' | 'orderId' | 'tableCode' | 'date';
   }): Promise<OrderHistory[]> => {
     try {
+      console.log('OrderAPI.getOrderHistory called with params:', JSON.stringify(params));
+      
       const queryParams = new URLSearchParams();
       
-      if (params.month) {
-        queryParams.append('month', params.month);
-      }
-      if (params.startDate) {
+      // Input validation for date parameters
+      if (params.startDate && params.endDate) {
+        // Basic validation - ensure they're strings in YYYY-MM-DD format
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        
+        if (!dateRegex.test(params.startDate)) {
+          console.error('Invalid startDate format:', params.startDate);
+          throw new Error('Start date must be in YYYY-MM-DD format');
+        }
+        
+        if (!dateRegex.test(params.endDate)) {
+          console.error('Invalid endDate format:', params.endDate);
+          throw new Error('End date must be in YYYY-MM-DD format');
+        }
+        
         queryParams.append('startDate', params.startDate);
-      }
-      if (params.endDate) {
         queryParams.append('endDate', params.endDate);
+        
+        console.log(`API Query: Date range ${params.startDate} to ${params.endDate}`);
+      } else if (params.month) {
+        queryParams.append('month', params.month);
+        console.log(`API Query: Month ${params.month}`);
       }
+      
       if (params.searchTerm) {
         queryParams.append('search', params.searchTerm);
       }
@@ -243,11 +261,34 @@ export const OrderAPI = {
         queryParams.append('searchField', params.searchField);
       }
 
-      // The correct endpoint is /api/order-history
-      const response = await api.get<OrderHistory[]>(`/order-history?${queryParams.toString()}`);
+      const url = `/order-history?${queryParams.toString()}`;
+      console.log(`Fetching order history from: ${url}`);
+      
+      const response = await api.get<OrderHistory[]>(url);
       
       if (!response.data) {
+        console.log('API returned empty data');
         return []; // Return empty array if no data
+      }
+
+      console.log(`API returned ${response.data.length} orders`);
+      
+      // ALWAYS perform client-side date filtering for consistency
+      if (params.startDate && params.endDate) {
+        const filteredData = response.data.filter(order => 
+          isDateInRange(
+            order.orderDate || order.completedAt || order.createdAt,
+            params.startDate!,
+            params.endDate!
+          )
+        );
+        
+        if (filteredData.length !== response.data.length) {
+          console.warn(`Client-side date filtering removed ${response.data.length - filteredData.length} orders outside of date range`);
+          console.log(`Returning ${filteredData.length} orders after date filtering`);
+        }
+        
+        return filteredData;
       }
 
       return response.data;

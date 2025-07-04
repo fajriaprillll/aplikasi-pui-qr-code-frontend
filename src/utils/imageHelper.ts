@@ -1,4 +1,5 @@
 import api from '../api/axios';
+import type { Menu } from '../types';
 
 /**
  * Helper functions for diagnosing and fixing image upload issues
@@ -101,15 +102,18 @@ export const menuToImageMap: Record<string, string> = {
   'nasi goreng': 'nasi_goreng.jpg',
   'es teh': 'es_teh.jpg', 
   'es jeruk': 'es_jeruk.jpg',
+  'es teler': 'es_teler.jpg',
   'french fries': 'french_fries.jpg',
   'roti bakar': 'roti_bakar.jpg',
   'ayam bakar madu': 'ayam_bakar_madu.jpg',
+  'sate ayam': 'sate_ayam.jpg',
   // Tambahkan variasi lain dari nama menu
   'nasgor spesial': 'nasi_goreng.jpg',
   'nasigor': 'nasi_goreng.jpg',
   'nasi': 'nasi_goreng.jpg',
   'teh': 'es_teh.jpg',
   'jeruk': 'es_jeruk.jpg',
+  'teler': 'es_teler.jpg',
   'roti': 'roti_bakar.jpg',
   'es': 'es_teh.jpg',
   'seger': 'es_jeruk.jpg',
@@ -119,6 +123,7 @@ export const menuToImageMap: Record<string, string> = {
   'fries': 'french_fries.jpg',
   'bakar': 'roti_bakar.jpg',
   'enak': 'roti_bakar.jpg',
+  'sate': 'sate_ayam.jpg',
 };
 
 /**
@@ -126,22 +131,91 @@ export const menuToImageMap: Record<string, string> = {
  * @param menuName Nama menu
  * @returns Nama file gambar jika ditemukan, undefined jika tidak
  */
-export const getImageFileNameByMenuName = (menuName: string): string | undefined => {
-  const lowerCaseName = menuName.toLowerCase();
-  
-  // Periksa kecocokan langsung
-  if (menuToImageMap[lowerCaseName]) {
-    return menuToImageMap[lowerCaseName];
+export const getImageFileNameByMenuName = (menuName: string): string | null => {
+  const nameToFileMap: Record<string, string> = {
+    'Nasi Goreng': 'nasi_goreng.jpg',
+    'Nasgor': 'nasi_goreng.jpg',
+    'Ayam Bakar Madu': 'ayam_bakar_madu.jpg',
+    'Es Teh': 'es_teh.jpg',
+    'Es Jeruk': 'es_jeruk.jpg',
+    'Es Teler': 'es_teler.jpg',
+    'French Fries': 'french_fries.jpg',
+    'Roti Bakar': 'roti_bakar.jpg',
+    'Sate Ayam': 'sate_ayam.jpg'
+  };
+
+  // Try to find an exact match
+  if (nameToFileMap[menuName]) {
+    return nameToFileMap[menuName];
   }
-  
-  // Periksa kecocokan parsial
-  for (const [key, value] of Object.entries(menuToImageMap)) {
-    if (lowerCaseName.includes(key) || key.includes(lowerCaseName)) {
+
+  // Try to find a case-insensitive match
+  const lowerMenuName = menuName.toLowerCase();
+  for (const [key, value] of Object.entries(nameToFileMap)) {
+    if (key.toLowerCase() === lowerMenuName) {
       return value;
     }
   }
   
-  return undefined;
+  // Try to find a partial match
+  for (const [key, value] of Object.entries(nameToFileMap)) {
+    if (lowerMenuName.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerMenuName)) {
+      return value;
+    }
+  }
+  
+  return null;
+};
+
+/**
+ * Add this new function to check if a filename exists in the available images
+ */
+export const getAvailableMenuImages = (): string[] => {
+  // This is a mock function since we can't read the file system directly in browser
+  // In a real application, this would be fetched from an API
+  return [
+    'ayam_bakar_madu.jpg',
+    'es_jeruk.jpg',
+    'es_teh.jpg',
+    'es_teler.jpg',
+    'french_fries.jpg',
+    'nasi_goreng.jpg',
+    'roti_bakar.jpg',
+    'sate_ayam.jpg'
+  ];
+};
+
+/**
+ * Add this function to check if an image exists in the available images
+ */
+export const isImageAvailable = (filename: string): boolean => {
+  if (!filename) return false;
+  
+  // Clean up the filename - remove path if present
+  let cleanFilename = filename;
+  if (filename.includes('/')) {
+    cleanFilename = filename.split('/').pop() || '';
+  } else if (filename.includes('\\')) {
+    cleanFilename = filename.split('\\').pop() || '';
+  }
+  
+  // Remove any query parameters
+  if (cleanFilename.includes('?')) {
+    cleanFilename = cleanFilename.split('?')[0];
+  }
+  
+  // Get the available images
+  const availableImages = getAvailableMenuImages();
+  
+  // Direct match
+  if (availableImages.includes(cleanFilename)) {
+    return true;
+  }
+  
+  // Case-insensitive match
+  return availableImages.some(img => 
+    img.toLowerCase() === cleanFilename.toLowerCase()
+  );
 };
 
 /**
@@ -156,7 +230,44 @@ export const getMenuImageUrl = (
   databasePath?: string,
   forceReload: number = 0
 ): string => {
-  // Coba berbagai metode untuk mendapatkan nama file yang benar
+  // Add cache busting for all image URLs
+  const cacheBuster = `?v=${Date.now()}-${forceReload}`;
+  
+  // Check if the database path is valid and exists
+  if (databasePath && databasePath.trim() !== '') {
+    console.log(`ImageHelper - Using database path for "${menuName}": ${databasePath}`);
+    
+    // If the path is already a full URL, return it
+    if (databasePath.startsWith('http')) {
+      return `${databasePath}${cacheBuster}`;
+    }
+    
+    // Extract just the filename if it's a path
+    let filename = databasePath;
+    if (databasePath.includes('/')) {
+      filename = databasePath.split('/').pop() || '';
+    }
+    
+    // Check if this filename exists in our available images
+    if (isImageAvailable(filename)) {
+      console.log(`ImageHelper - Found exact match for "${filename}" in available images`);
+      return `/images/menu/${filename}${cacheBuster}`;
+    }
+    
+    // If the path starts with a slash, it's already a root-relative path
+    if (databasePath.startsWith('/')) {
+      return `${databasePath}${cacheBuster}`;
+    }
+    
+    // Otherwise, ensure it has the correct prefix
+    if (databasePath.startsWith('images/')) {
+      return `/${databasePath}${cacheBuster}`;
+    } else {
+      return `/images/menu/${databasePath}${cacheBuster}`;
+    }
+  }
+  
+  // If no valid database path, try auto-detection
   
   // 1. Deteksi otomatis dengan fungsi pemetaan
   const imageFileName = getImageFileNameByMenuName(menuName);
@@ -164,7 +275,7 @@ export const getMenuImageUrl = (
   if (imageFileName) {
     console.log(`ImageHelper - Auto-detected image for "${menuName}": ${imageFileName}`);
     // Always add cache-busting timestamp for auto-detected images
-    return `/images/menu/${imageFileName}?v=${Date.now()}`;
+    return `/images/menu/${imageFileName}${cacheBuster}`;
   }
   
   // 2. Coba tebak nama file berdasarkan nama menu
@@ -177,7 +288,7 @@ export const getMenuImageUrl = (
   console.log(`ImageHelper - Trying filename guess for "${menuName}": ${possibleFilename}`);
   
   // Coba langsung dari tebakan nama file ini, dengan timestamp untuk hindari cache
-  return `/images/menu/${possibleFilename}?v=${Date.now()}`;
+  return `/images/menu/${possibleFilename}${cacheBuster}`;
 };
 
 /**
@@ -187,41 +298,41 @@ export const getMenuImageUrl = (
  * @param menus Array menu yang akan diupdate
  * @returns Array menu dengan path gambar yang sudah diperbaiki
  */
-export const bulkFixMenuImages = (menus: any[]): any[] => {
-  console.log('Starting bulk fix of menu images...');
-  
-  return menus.map(menu => {
-    // Skip jika menu tidak memiliki id atau nama
-    if (!menu.id || !menu.name) return menu;
+export const bulkFixMenuImages = async (menus: Menu[], updateFunction: (id: number, updates: Partial<Menu>) => Promise<any>): Promise<{ success: boolean; fixed: number; errors: number }> => {
+  let fixed = 0;
+  let errors = 0;
+
+  try {
+    for (const menu of menus) {
+      // Skip if the menu already has a valid imageUrl
+      if (menu.imageUrl && menu.imageUrl.trim() !== '') {
+        continue;
+      }
+
+      // Try to find an image file name based on menu name
+      const fileName = getImageFileNameByMenuName(menu.name);
+      if (fileName) {
+        try {
+          // Create the correct path
+          const imageUrl = `/images/menu/${fileName}`;
     
-    // Coba deteksi nama file berdasarkan nama menu
-    const detectedFileName = getImageFileNameByMenuName(menu.name);
-    
-    // Jika tidak ada file terdeteksi, return menu asli
-    if (!detectedFileName) {
-      console.log(`[AUTO-FIX] No image mapping found for "${menu.name}"`);
-      return menu;
+          // Update the menu with the corrected path
+          await updateFunction(menu.id, { imageUrl });
+          
+          console.log(`Fixed image for "${menu.name}": ${imageUrl}`);
+          fixed++;
+        } catch (err) {
+          console.error(`Error updating image for "${menu.name}":`, err);
+          errors++;
+        }
+      }
     }
-    
-    // Path yang benar adalah images/menu/[nama_file]
-    const correctPath = `images/menu/${detectedFileName}`;
-    
-    // Jika path sama dengan yang sudah ada, tidak perlu update
-    if (menu.image === correctPath) {
-      console.log(`[AUTO-FIX] Menu "${menu.name}" path already correct: ${correctPath}`);
-      return menu;
-    }
-    
-    console.log(`[AUTO-FIX] Menu "${menu.name}" (ID: ${menu.id}): 
-      Path lama: ${menu.image || 'KOSONG'}
-      Path baru: ${correctPath}`);
-    
-    // Return menu dengan path yang sudah diperbaiki
-    return {
-      ...menu,
-      image: correctPath
-    };
-  });
+
+    return { success: true, fixed, errors };
+  } catch (err) {
+    console.error('Error in bulkFixMenuImages:', err);
+    return { success: false, fixed, errors };
+  }
 };
 
 /**
@@ -288,4 +399,4 @@ export const diagnoseImagePath = (imagePath: string): string => {
   }
   
   return diagnosis;
-}; 
+};

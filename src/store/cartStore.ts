@@ -6,9 +6,12 @@ interface CartItem {
   menuId: number;
   quantity: number;
   price: number;
+  name: string;
+  imageUrl: string;
   menu?: Menu;
   customizations?: Record<string, string[]>;
   extraPrice?: number;
+  notes?: string;
 }
 
 interface CartStore {
@@ -78,6 +81,8 @@ export const useCartStore = create<CartStore>((set, get) => ({
         menuId: menu.id,
         quantity,
         price: finalPrice,
+        name: menu.name,
+        imageUrl: menu.imageUrl,
         menu,
         customizations,
         extraPrice: numericExtraPrice,

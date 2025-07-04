@@ -1,7 +1,8 @@
 export enum OrderStatus {
   PENDING = 'PENDING',
   PROCESSING = 'PROCESSING',
-  COMPLETED = 'COMPLETED'
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED'
 }
 
 // For creating new orders

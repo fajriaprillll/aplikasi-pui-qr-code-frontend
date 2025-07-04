@@ -77,7 +77,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <Layout noHeaderFooter>
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-white flex items-center justify-center px-4 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center px-4 relative overflow-hidden text-gray-900 dark:text-gray-100 transition-colors duration-300">
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-red-200 rounded-full -mt-32 -mr-32 opacity-20"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-200 rounded-full -mb-32 -ml-32 opacity-20"></div>

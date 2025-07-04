@@ -9,6 +9,8 @@ interface ButtonProps extends Omit<React.ComponentProps<typeof motion.button>, '
   iconLeft?: React.ReactNode;
   iconRight?: React.ReactNode;
   children?: React.ReactNode;
+  rounded?: 'default' | 'full' | 'none';
+  elevation?: 'flat' | 'raised' | 'floating';
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -21,34 +23,48 @@ const Button: React.FC<ButtonProps> = ({
   size = 'md',
   iconLeft,
   iconRight,
+  rounded = 'default',
+  elevation = 'raised',
   ...props
 }) => {
   const sizeClasses = {
-    sm: 'px-2 py-1.5 text-xs',
+    sm: 'px-2.5 py-1.5 text-xs',
     md: 'px-4 py-2 text-sm',
     lg: 'px-6 py-3 text-base',
   }[size];
   
-  const baseClasses = `${sizeClasses} rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 transform relative overflow-hidden whitespace-nowrap`;
+  const roundedClasses = {
+    default: 'rounded',
+    full: 'rounded-full',
+    none: 'rounded-none',
+  }[rounded];
+  
+  const elevationClasses = {
+    flat: '',
+    raised: 'shadow-md hover:shadow-lg',
+    floating: 'shadow-lg hover:shadow-xl',
+  }[elevation];
+  
+  const baseClasses = `${sizeClasses} ${roundedClasses} ${elevationClasses} font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 transform relative overflow-hidden whitespace-nowrap`;
   
   const variantClasses = {
-    primary: `bg-gradient-to-r from-kedai-red to-kedai-red/80 text-white shadow-md shadow-kedai-red/20 dark:shadow-kedai-red/30
-      hover:from-kedai-red hover:to-kedai-red/90 hover:shadow-lg hover:shadow-kedai-red/30 dark:hover:shadow-kedai-red/40 focus:ring-kedai-red/30 dark:focus:ring-kedai-red/70`,
+    primary: `bg-primary-500 text-white shadow-primary-200/50 dark:shadow-primary-900/30
+      hover:bg-primary-600 hover:shadow-primary-300/50 dark:hover:shadow-primary-900/40 focus:ring-primary-300 dark:focus:ring-primary-700`,
     
-    secondary: `bg-white dark:bg-gray-800 border border-kedai-red/30 dark:border-kedai-red/40 text-kedai-red dark:text-kedai-red shadow-sm
-      hover:bg-kedai-red/10 dark:hover:bg-gray-700 hover:text-kedai-red dark:hover:text-kedai-red hover:shadow-md hover:shadow-kedai-red/10 dark:hover:shadow-kedai-red/20 focus:ring-kedai-red/20 dark:focus:ring-kedai-red/40`,
+    secondary: `bg-white dark:bg-gray-800 border border-primary-300 dark:border-primary-700 text-primary-500 dark:text-primary-400 shadow-sm
+      hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-300 hover:shadow-primary-100/50 dark:hover:shadow-primary-900/20 focus:ring-primary-200 dark:focus:ring-primary-800`,
     
-    danger: `bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md shadow-red-300/50 dark:shadow-red-900/30
-      hover:from-red-600 hover:to-red-700 hover:shadow-lg hover:shadow-red-400/50 dark:hover:shadow-red-900/40 focus:ring-red-400 dark:focus:ring-red-800`,
+    danger: `bg-red-500 text-white shadow-red-300/50 dark:shadow-red-900/30
+      hover:bg-red-600 hover:shadow-red-400/50 dark:hover:shadow-red-900/40 focus:ring-red-400 dark:focus:ring-red-800`,
     
-    success: `bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md shadow-green-200/50 dark:shadow-green-900/30
-      hover:from-green-600 hover:to-green-700 hover:shadow-lg hover:shadow-green-300/50 dark:hover:shadow-green-900/40 focus:ring-green-300 dark:focus:ring-green-800`,
+    success: `bg-green-500 text-white shadow-green-200/50 dark:shadow-green-900/30
+      hover:bg-green-600 hover:shadow-green-300/50 dark:hover:shadow-green-900/40 focus:ring-green-300 dark:focus:ring-green-800`,
     
-    light: `bg-white/90 dark:bg-gray-700/90 text-kedai-red dark:text-white border border-gray-200 dark:border-gray-600 shadow-sm
+    light: `bg-white/90 dark:bg-gray-700/90 text-gray-800 dark:text-white border border-gray-200 dark:border-gray-600 shadow-sm
       hover:bg-white hover:shadow-md dark:hover:bg-gray-600 focus:ring-gray-200 dark:focus:ring-gray-700`,
     
-    dark: `bg-kedai-black dark:bg-kedai-black text-white shadow-md shadow-kedai-black/30 dark:shadow-black/30
-      hover:bg-kedai-black/90 dark:hover:bg-black hover:shadow-lg hover:shadow-kedai-black/30 dark:hover:shadow-black/40 focus:ring-kedai-black/50 dark:focus:ring-gray-800`,
+    dark: `bg-gray-800 dark:bg-gray-900 text-white shadow-gray-300/30 dark:shadow-black/30
+      hover:bg-gray-700 dark:hover:bg-black hover:shadow-gray-400/30 dark:hover:shadow-black/40 focus:ring-gray-500 dark:focus:ring-gray-800`,
   }[variant];
   
   const widthClass = fullWidth ? 'w-full' : '';
@@ -80,11 +96,11 @@ const Button: React.FC<ButtonProps> = ({
       {...props}
     >
       {/* Button content with improved layout */}
-      <span className="relative flex items-center justify-center gap-1 truncate">
+      <span className="relative flex items-center justify-center gap-1.5 truncate">
         {isLoading ? (
           <div className="flex items-center justify-center">
             <motion.svg 
-              className="h-4 w-4 mr-1" 
+              className="h-4 w-4 mr-1.5" 
               xmlns="http://www.w3.org/2000/svg" 
               fill="none" 
               viewBox="0 0 24 24"
@@ -102,21 +118,62 @@ const Button: React.FC<ButtonProps> = ({
           </div>
         ) : (
           <>
-            {iconLeft && <span className="flex items-center flex-shrink-0">{iconLeft}</span>}
+            {iconLeft && (
+              <motion.span 
+                className="flex items-center flex-shrink-0"
+                initial={{ x: -5, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                {iconLeft}
+              </motion.span>
+            )}
             <span className="truncate">{children}</span>
-            {iconRight && <span className="flex items-center flex-shrink-0">{iconRight}</span>}
+            {iconRight && (
+              <motion.span 
+                className="flex items-center flex-shrink-0"
+                initial={{ x: 5, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                {iconRight}
+              </motion.span>
+            )}
           </>
         )}
       </span>
       
-      {/* Subtle hover effect overlay */}
+      {/* Subtle gradient overlay */}
+      <span className="absolute inset-0 overflow-hidden rounded-inherit">
+        <span className="absolute inset-0 bg-gradient-to-t from-black/5 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+      </span>
+      
+      {/* Ripple effect overlay */}
       {!isDisabled && (
         <motion.span 
-          className="absolute inset-0 bg-white rounded-lg pointer-events-none"
+          className="absolute inset-0 bg-white rounded-inherit pointer-events-none"
           initial={{ opacity: 0 }}
           whileHover={{ opacity: 0.1 }}
+          whileTap={{ 
+            opacity: 0.15, 
+            scale: 1.5, 
+            transition: { duration: 0.5 } 
+          }}
           transition={{ duration: 0.2 }}
         />
+      )}
+      
+      {/* Subtle shine effect */}
+      {!isDisabled && variant !== 'light' && variant !== 'secondary' && (
+        <motion.span 
+          className="absolute inset-0 overflow-hidden rounded-inherit"
+          initial={{ opacity: 0 }}
+          whileHover={{ opacity: 1 }}
+        >
+          <span 
+            className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent"
+          />
+        </motion.span>
       )}
     </motion.button>
   );

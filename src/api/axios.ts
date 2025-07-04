@@ -56,7 +56,49 @@ api.interceptors.request.use(
       
     // If token exists, add it to the headers
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      // Ensure token is properly formatted and trimmed
+      config.headers.Authorization = `Bearer ${token.trim()}`;
+      console.log('Added auth token to request');
+    } else {
+      console.warn('No auth token found in localStorage');
+    }
+    
+    // Special handling for FormData requests
+    if (config.data instanceof FormData) {
+      // FormData requires removing the Content-Type header
+      // to let the browser set the correct multipart boundary
+      delete config.headers['Content-Type'];
+      
+      // For browsers that don't properly remove Content-Type
+      // This ensures the correct multipart boundary is generated
+      config.headers['Content-Type'] = undefined; 
+      
+      // Make sure Authorization header is preserved for FormData requests
+      if (token) {
+        config.headers.Authorization = `Bearer ${token.trim()}`;
+      }
+
+      console.log(`FormData request detected for ${config.url}`);
+      
+      // Log FormData contents for debugging
+      if (config.data instanceof FormData) {
+        console.log('FormData contents:');
+        for (const pair of config.data.entries()) {
+          console.log(`  ${pair[0]}: ${pair[1]}`);
+        }
+      }
+    } else {
+      // Ensure JSON content type for non-FormData requests
+      config.headers['Content-Type'] = 'application/json';
+    }
+    
+    // Special handling for DELETE requests
+    if (config.method?.toLowerCase() === 'delete') {
+      console.log('DELETE request detected, ensuring proper headers');
+      // Ensure Authorization header is set for DELETE requests
+      if (token) {
+        config.headers.Authorization = `Bearer ${token.trim()}`;
+      }
     }
     
     // Enhance request logging with more details
@@ -64,7 +106,7 @@ api.interceptors.request.use(
     console.log(`OUTGOING API REQUEST: ${config.method?.toUpperCase()} ${config.url}`);
     console.log(`Headers:`, config.headers);
     
-    if (config.data) {
+    if (config.data && !(config.data instanceof FormData)) {
       console.log('Request payload:', config.data);
       
       // Add special handling for status updates to help diagnose format issues
@@ -136,8 +178,17 @@ api.interceptors.response.use(
       // Clear auth data
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      // Redirect to login page
-      window.location.href = '/admin/login';
+      
+      // Only redirect if we're not already on the login page
+      const currentPath = window.location.pathname;
+      if (!currentPath.includes('/login') && !currentPath.includes('/admin/login')) {
+        // Redirect to login page
+        console.log('Redirecting to login page');
+        window.location.href = '/admin/login';
+      } else {
+        console.log('Already on login page, not redirecting');
+      }
+      
       return Promise.reject(new Error('Authentication expired. Please login again.'));
     }
     
